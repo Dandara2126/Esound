@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Esound — biblioteca de músicas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0a0d;
+    --bg-raised: #131316;
+    --bg-card: #17171b;
+    --bg-card-hover: #1f1f25;
+    --border: #2a2a30;
+    --border-soft: #1e1e23;
+    --pink: #ff3d81;
+    --pink-bright: #ff6ca0;
+    --pink-dim: #7a2545;
+    --cream: #f2edf0;
+    --cream-dim: #a8a3a8;
+    --muted: #6e6a70;
+    --danger: #ff3d81;
+    --danger-bright: #ff6ca0;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--cream);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap{
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ---------- header ---------- */
+  .header{
+    display:flex;
+    align-items:center;
+    gap:20px;
+    margin-bottom: 8px;
+  }
+  .disc{
+    width:56px; height:56px; flex-shrink:0;
+    border-radius:50%;
+    background: radial-gradient(circle at 50% 50%, var(--bg-raised) 0 8px, #0c0c10 9px 10px, #1a1a20 11px 22px, #0c0c10 23px 24px, var(--pink) 25px 27px, #0c0c10 28px 100%);
+    transition: transform .6s ease;
+  }
+  .header:hover .disc{ transform: rotate(150deg); }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:900;
+    font-size: 34px;
+    letter-spacing: -0.5px;
+    margin:0;
+    color: var(--cream);
+  }
+  .subtitle{
+    font-size:14px;
+    color: var(--cream-dim);
+    margin: 4px 0 0;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pink);
+    margin: 0 0 32px 76px;
+  }
+
+  /* ---------- config da API ---------- */
+  details.config{
+    margin: 0 0 32px;
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    background: var(--bg-raised);
+  }
+  details.config summary{
+    cursor:pointer;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--cream-dim);
+    list-style: none;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+  }
+  details.config summary::-webkit-details-marker{ display:none; }
+  details.config summary::after{
+    content: '▾';
+    color: var(--muted);
+    transition: transform .2s;
+  }
+  details.config[open] summary::after{ transform: rotate(180deg); }
+  .config-body{
+    padding: 0 16px 16px;
+    display:flex;
+    gap:10px;
+    flex-wrap: wrap;
+    align-items:center;
+  }
+  .config-body input[type=text]{
+    flex:1;
+    min-width: 220px;
+  }
+  .status-pill{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--cream-dim);
+    white-space: nowrap;
+  }
+  .status-pill.ok{ color:#8fc98f; border-color:#3a5a3a; }
+  .status-pill.demo{ color: var(--pink); border-color: var(--pink-dim); }
+
+  /* ---------- form ---------- */
+  .panel{
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+  .panel h2{
+    font-family:'Fraunces', serif;
+    font-size: 18px;
+    font-weight:600;
+    margin: 0 0 18px;
+    color: var(--cream);
+  }
+  .grid-form{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+    gap: 14px;
+  }
+  label{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    display:block;
+    margin-bottom: 6px;
+  }
+  input[type=text], input[type=number], select{
+    width:100%;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    color: var(--cream);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  input:focus, select:focus{
+    outline:none;
+    border-color: var(--pink);
+  }
+  .form-actions{
+    margin-top: 18px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  button{
+    font-family: inherit;
+    cursor:pointer;
+    border:none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .btn-primary{
+    background: var(--pink);
+    color: #201a06;
+    padding: 11px 22px;
+  }
+  .btn-primary:hover{ background: var(--pink-bright); }
+  .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+  .form-error{
+    font-size: 13px;
+    color: var(--danger-bright);
+  }
+
+  /* ---------- filtros ---------- */
+  .filters{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom: 20px;
+  }
+  .filters > div{ flex:1; min-width: 160px; }
+  .filters .search{ min-width: 220px; }
+  .clear-filters{
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--cream-dim);
+    padding: 0 14px;
+    align-self: flex-end;
+    height: 40px;
+    margin-top: 20px;
+  }
+  .clear-filters:hover{ border-color: var(--pink); color: var(--pink); }
+
+  .count-row{
+    display:flex;
+    justify-content: space-between;
+    align-items:baseline;
+    margin-bottom: 14px;
+  }
+  .count-row .n{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ---------- lista ---------- */
+  .track{
+    display:grid;
+    grid-template-columns: 44px 1.6fr 1fr 1fr 1fr 60px 68px;
+    gap: 14px;
+    align-items:center;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: background .15s, border-color .15s;
+  }
+  .track:hover{ background: var(--bg-card-hover); border-color: var(--border); }
+  .track .cat-no{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--pink);
+    border: 1px solid var(--pink-dim);
+    border-radius: 6px;
+    text-align:center;
+    padding: 4px 0;
+  }
+  .track .titulo{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size: 15px;
+    color: var(--cream);
+  }
+  .track .titulo .artista-mobile{ display:none; }
+  .track .campo{
+    font-size: 13px;
+    color: var(--cream-dim);
+  }
+  .track .campo .k{
+    display:block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .track .ano{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--cream-dim);
+    text-align:center;
+  }
+  .edit-input{
+    width:100%;
+    background: var(--bg-raised);
+    border: 1px solid var(--pink-dim);
+    color: var(--cream);
+    padding: 7px 9px;
+    border-radius: 6px;
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size: 14px;
+  }
+  .edit-input:focus{ outline:none; border-color: var(--pink); }
+  .acoes{ display:flex; gap:4px; justify-content:flex-end; }
+  .edit-btn, .save-btn, .cancel-btn, .del-btn{
+    background: transparent;
+    color: var(--muted);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height:1;
+    flex-shrink:0;
+  }
+  .del-btn{ font-size:16px; }
+  .edit-btn:hover{ background: rgba(255,61,129,.12); color: var(--pink-bright); }
+  .save-btn{ color: var(--pink); }
+  .save-btn:hover{ background: rgba(255,61,129,.18); color: var(--pink-bright); }
+  .cancel-btn:hover{ background: rgba(255,255,255,.06); color: var(--cream); }
+  .del-btn:hover{ background: rgba(255,61,129,.15); color: var(--danger-bright); }
+
+  .empty, .loading{
+    text-align:center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty .disc-empty{
+    width:64px;height:64px;
+    margin: 0 auto 16px;
+    border-radius:50%;
+    border: 2px dashed var(--border);
+  }
+  .empty p{ font-size:14px; margin: 4px 0; }
+  .empty .hint{ font-size:12px; color: var(--muted); }
+
+  .toast{
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    color: var(--cream);
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity .25s, transform .25s;
+    z-index: 10;
+  }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+  .toast.error{ border-color: #5a2323; color: var(--danger-bright); }
+
+  @media (max-width: 720px){
+    .track{
+      grid-template-columns: 36px 1fr 64px;
+      grid-template-areas: "no titulo acoes" "no g4 acoes";
+    }
+    .track .cat-no{ grid-area: no; }
+    .track .titulo{ grid-area: titulo; }
+    .acoes{ grid-area: acoes; }
+    .track .campo.genero, .track .campo.compositor, .track .ano{ display:none; }
+    .track .titulo .artista-mobile{ display:block; font-size:12px; color: var(--cream-dim); font-family:'IBM Plex Sans',sans-serif; font-weight:400; margin-top:2px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="disc"></div>
+    <div>
+      <h1>Esound</h1>
+      <p class="subtitle">sua biblioteca de músicas, sem faixa risca</p>
+    </div>
+  </div>
+  <p class="eyebrow">discografia pessoal</p>
+
+  <details class="config">
+    <summary>
+      <span>Conexão com a API</span>
+      <span id="statusPill" class="status-pill ok">mesma origem</span>
+    </summary>
+    <div class="config-body">
+      <input type="text" id="apiBase" placeholder="Em branco = mesma origem (recomendado dentro do wwwroot)" value="">
+      <button class="btn-primary" id="connectBtn" style="padding:10px 18px;">Conectar</button>
+      <button id="demoBtn" style="padding:10px 18px; background:transparent; border:1px solid var(--border); color:var(--cream-dim);">Usar modo demonstração</button>
+    </div>
+  </details>
+
+  <div class="panel">
+    <h2>Adicionar música</h2>
+    <div class="grid-form">
+      <div>
+        <label for="fTitulo">Título</label>
+        <input type="text" id="fTitulo" placeholder="Águas de Março">
+      </div>
+      <div>
+        <label for="fAno">Ano</label>
+        <input type="number" id="fAno" placeholder="1972">
+      </div>
+      <div>
+        <label for="fGenero">Gênero</label>
+        <input type="text" id="fGenero" placeholder="MPB">
+      </div>
+      <div>
+        <label for="fCompositor">Compositor</label>
+        <input type="text" id="fCompositor" placeholder="Tom Jobim">
+      </div>
+      <div>
+        <label for="fArtista">Artista</label>
+        <input type="text" id="fArtista" placeholder="Elis Regina">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" id="addBtn">Adicionar música</button>
+      <span class="form-error" id="formError"></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Buscar e filtrar</h2>
+    <div class="filters">
+      <div class="search">
+        <label for="fBusca">Buscar por título</label>
+        <input type="text" id="fBusca" placeholder="Digite parte do título...">
+      </div>
+      <div>
+        <label for="fFiltroGenero">Gênero</label>
+        <select id="fFiltroGenero"><option value="">Todos</option></select>
+      </div>
+      <div>
+        <label for="fFiltroArtista">Artista</label>
+        <select id="fFiltroArtista"><option value="">Todos</option></select>
+      </div>
+      <button class="clear-filters" id="clearFilters">Limpar filtros</button>
+    </div>
+  </div>
+
+  <div class="count-row">
+    <h2 style="font-family:'Fraunces',serif; font-size:16px; margin:0; color:var(--cream-dim); font-weight:600;">Faixas</h2>
+    <span class="n" id="countLabel">0 músicas</span>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var STORAGE_KEY = 'musicas:lista';
+  var state = {
+    apiBase: '',
+    demoMode: false,
+    baseline: [],
+    exibidas: [],
+    filtros: { busca: '', genero: '', artista: '' },
+    editingId: null,
+    reqToken: 0
+  };
+
+  var el = {
+    apiBase: document.getElementById('apiBase'),
+    connectBtn: document.getElementById('connectBtn'),
+    demoBtn: document.getElementById('demoBtn'),
+    statusPill: document.getElementById('statusPill'),
+    fTitulo: document.getElementById('fTitulo'),
+    fAno: document.getElementById('fAno'),
+    fGenero: document.getElementById('fGenero'),
+    fCompositor: document.getElementById('fCompositor'),
+    fArtista: document.getElementById('fArtista'),
+    addBtn: document.getElementById('addBtn'),
+    formError: document.getElementById('formError'),
+    fBusca: document.getElementById('fBusca'),
+    fFiltroGenero: document.getElementById('fFiltroGenero'),
+    fFiltroArtista: document.getElementById('fFiltroArtista'),
+    clearFilters: document.getElementById('clearFilters'),
+    countLabel: document.getElementById('countLabel'),
+    list: document.getElementById('list'),
+    toast: document.getElementById('toast')
+  };
+
+  function showToast(msg, isError){
+    el.toast.textContent = msg;
+    el.toast.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(function(){ el.toast.className = 'toast'; }, 2600);
+  }
+
+  function setStatus(){
+    if(state.demoMode){
+      el.statusPill.textContent = 'modo demonstração';
+      el.statusPill.className = 'status-pill demo';
+    } else if(!state.apiBase){
+      el.statusPill.textContent = 'mesma origem';
+      el.statusPill.className = 'status-pill ok';
+    } else {
+      el.statusPill.textContent = 'conectado';
+      el.statusPill.className = 'status-pill ok';
+    }
+  }
+
+  /* ---------- persistência do modo demo ---------- */
+  async function demoLoad(){
+    try{
+      var res = await window.storage.get(STORAGE_KEY, false);
+      return res && res.value ? JSON.parse(res.value) : seedData();
+    } catch(e){
+      return seedData();
+    }
+  }
+  async function demoSave(list){
+    try{ await window.storage.set(STORAGE_KEY, JSON.stringify(list), false); }
+    catch(e){ /* silencioso */ }
+  }
+  function seedData(){
+    return [
+      { id: 'demo1', titulo: 'Águas de Março', ano: 1972, genero: 'MPB', compositor: 'Tom Jobim', artista: 'Elis Regina' },
+      { id: 'demo2', titulo: 'Trem das Onze', ano: 1964, genero: 'Samba', compositor: 'Adoniran Barbosa', artista: 'Demônios da Garoa' },
+      { id: 'demo3', titulo: 'Construção', ano: 1971, genero: 'MPB', compositor: 'Chico Buarque', artista: 'Chico Buarque' }
+    ];
+  }
+
+  /* ---------- cliente da API ---------- */
+  function musicasUrl(){
+    return state.apiBase.replace(/\/$/, '') + '/Musicas';
+  }
+
+  async function parseErro(res){
+    try{
+      var data = await res.json();
+      if(data && data.message) return data.message;
+    } catch(e){ /* corpo não é JSON */ }
+    return 'A API respondeu com erro (' + res.status + ')';
+  }
+
+  async function apiList(){
+    if(state.demoMode) return await demoLoad();
+    var res = await fetch(musicasUrl());
+    if(!res.ok) throw new Error(await parseErro(res));
+    var data = await res.json();
+    return (data.musicas || []).filter(Boolean);
+  }
+  async function apiBusca(titulo){
+    var res = await fetch(musicasUrl() + '/busca/' + encodeURIComponent(titulo));
+    if(res.status === 404) return [];
+    if(!res.ok) throw new Error(await parseErro(res));
+    var data = await res.json();
+    return (data.musicas || []).filter(Boolean);
+  }
+  async function apiPorGenero(genero){
+    var res = await fetch(musicasUrl() + '/genero/' + encodeURIComponent(genero));
+    if(res.status === 404) return [];
+    if(!res.ok) throw new Error(await parseErro(res));
+    var data = await res.json();
+    return (data.musicas || []).filter(Boolean);
+  }
+  async function apiPorArtista(artista){
+    var res = await fetch(musicasUrl() + '/artista/' + encodeURIComponent(artista));
+    if(res.status === 404) return [];
+    if(!res.ok) throw new Error(await parseErro(res));
+    var data = await res.json();
+    return (data.musicas || []).filter(Boolean);
+  }
+  async function apiAdd(musica){
+    if(state.demoMode){
+      var list = await demoLoad();
+      musica.id = 'm_' + Date.now();
+      list.unshift(musica);
+      await demoSave(list);
+      return musica;
+    }
+    var res = await fetch(musicasUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(musica)
+    });
+    if(!res.ok) throw new Error(await parseErro(res));
+    var data = await res.json();
+    return data.musica;
+  }
+  async function apiEditarTitulo(id, novoTitulo){
+    if(state.demoMode){
+      var list = await demoLoad();
+      list.forEach(function(m){ if(String(m.id) === String(id)) m.titulo = novoTitulo; });
+      await demoSave(list);
+      return;
+    }
+    var res = await fetch(musicasUrl() + '/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ titulo: novoTitulo })
+    });
+    if(!res.ok) throw new Error(await parseErro(res));
+  }
+  async function apiDelete(id){
+    if(state.demoMode){
+      var list = await demoLoad();
+      list = list.filter(function(m){ return String(m.id) !== String(id); });
+      await demoSave(list);
+      return;
+    }
+    var res = await fetch(musicasUrl() + '/' + id, { method: 'DELETE' });
+    if(!res.ok) throw new Error(await parseErro(res));
+  }
+
+  /* ---------- busca/filtro combinando com os endpoints do backend ---------- */
+  function aplicaFiltrosLocais(list){
+    var busca = state.filtros.busca.trim().toLowerCase();
+    return list.filter(function(m){
+      if(busca && !(m.titulo || '').toLowerCase().includes(busca)) return false;
+      if(state.filtros.genero && m.genero !== state.filtros.genero) return false;
+      if(state.filtros.artista && m.artista !== state.filtros.artista) return false;
+      return true;
+    });
+  }
+
+  async function buscarExibidas(){
+    var busca = state.filtros.busca.trim();
+    var genero = state.filtros.genero;
+    var artista = state.filtros.artista;
+
+    if(state.demoMode){
+      return aplicaFiltrosLocais(await demoLoad());
+    }
+
+    var resultado;
+    if(busca){
+      resultado = await apiBusca(busca);
+      if(genero) resultado = resultado.filter(function(m){ return m.genero === genero; });
+      if(artista) resultado = resultado.filter(function(m){ return m.artista === artista; });
+    } else if(genero){
+      resultado = await apiPorGenero(genero);
+      if(artista) resultado = resultado.filter(function(m){ return m.artista === artista; });
+    } else if(artista){
+      resultado = await apiPorArtista(artista);
+    } else {
+      resultado = state.baseline;
+    }
+    return resultado;
+  }
+
+  /* ---------- render ---------- */
+  function catNo(i){
+    return 'N' + String(i+1).padStart(3,'0');
+  }
+
+  function populateFilterOptions(){
+    var generos = Array.from(new Set(state.baseline.map(function(m){ return m.genero; }).filter(Boolean))).sort();
+    var artistas = Array.from(new Set(state.baseline.map(function(m){ return m.artista; }).filter(Boolean))).sort();
+
+    var curG = el.fFiltroGenero.value;
+    el.fFiltroGenero.innerHTML = '<option value="">Todos</option>' + generos.map(function(g){ return '<option value="'+escAttr(g)+'">'+escHtml(g)+'</option>'; }).join('');
+    el.fFiltroGenero.value = generos.indexOf(curG) >= 0 ? curG : '';
+
+    var curA = el.fFiltroArtista.value;
+    el.fFiltroArtista.innerHTML = '<option value="">Todos</option>' + artistas.map(function(a){ return '<option value="'+escAttr(a)+'">'+escHtml(a)+'</option>'; }).join('');
+    el.fFiltroArtista.value = artistas.indexOf(curA) >= 0 ? curA : '';
+  }
+
+  function escHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; });
+  }
+  function escAttr(s){ return escHtml(s).replace(/"/g,'&quot;'); }
+
+  function render(){
+    populateFilterOptions();
+    var filtradas = state.exibidas;
+    el.countLabel.textContent = filtradas.length + (filtradas.length === 1 ? ' música' : ' músicas') +
+      (filtradas.length !== state.baseline.length ? ' de ' + state.baseline.length : '');
+
+    if(filtradas.length === 0){
+      el.list.innerHTML = '' +
+        '<div class="empty">' +
+          '<div class="disc-empty"></div>' +
+          '<p>' + (state.baseline.length === 0 ? 'Nenhuma música cadastrada ainda.' : 'Nenhuma música corresponde aos filtros.') + '</p>' +
+          '<p class="hint">' + (state.baseline.length === 0 ? 'Adicione a primeira faixa acima.' : 'Ajuste a busca ou limpe os filtros.') + '</p>' +
+        '</div>';
+      return;
+    }
+
+    el.list.innerHTML = filtradas.map(function(m, i){
+      var editando = state.editingId !== null && String(state.editingId) === String(m.id);
+      var tituloHtml = editando
+        ? '<input type="text" class="edit-input" id="editInput" value="'+escAttr(m.titulo)+'">'
+        : '<div class="titulo">'+escHtml(m.titulo)+'<div class="artista-mobile">'+escHtml(m.artista)+'</div></div>';
+      var acoesHtml = editando
+        ? '<button class="save-btn" title="Salvar" data-save="'+escAttr(m.id)+'">✓</button>' +
+          '<button class="cancel-btn" title="Cancelar" data-cancel="'+escAttr(m.id)+'">✕</button>'
+        : '<button class="edit-btn" title="Editar título" data-edit="'+escAttr(m.id)+'">✎</button>' +
+          '<button class="del-btn" title="Apagar" data-del="'+escAttr(m.id)+'">✕</button>';
+
+      return '' +
+      '<div class="track" data-id="'+escAttr(m.id)+'">' +
+        '<div class="cat-no">'+catNo(i)+'</div>' +
+        tituloHtml +
+        '<div class="campo genero"><span class="k">Gênero</span>'+escHtml(m.genero || '—')+'</div>' +
+        '<div class="campo compositor"><span class="k">Compositor</span>'+escHtml(m.compositor || '—')+'</div>' +
+        '<div class="campo artista-desktop"><span class="k">Artista</span>'+escHtml(m.artista || '—')+'</div>' +
+        '<div class="ano">'+escHtml(m.ano || '—')+'</div>' +
+        '<div class="acoes">'+acoesHtml+'</div>' +
+      '</div>';
+    }).join('');
+
+    el.list.querySelectorAll('[data-del]').forEach(function(btn){
+      btn.addEventListener('click', function(){ handleDelete(btn.getAttribute('data-del')); });
+    });
+    el.list.querySelectorAll('[data-edit]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        state.editingId = btn.getAttribute('data-edit');
+        render();
+        var input = document.getElementById('editInput');
+        if(input){ input.focus(); input.select(); }
+      });
+    });
+    el.list.querySelectorAll('[data-cancel]').forEach(function(btn){
+      btn.addEventListener('click', function(){ state.editingId = null; render(); });
+    });
+    el.list.querySelectorAll('[data-save]').forEach(function(btn){
+      btn.addEventListener('click', function(){ handleSaveTitulo(btn.getAttribute('data-save')); });
+    });
+
+    var editInput = document.getElementById('editInput');
+    if(editInput){
+      editInput.addEventListener('keydown', function(ev){
+        if(ev.key === 'Enter') handleSaveTitulo(state.editingId);
+        if(ev.key === 'Escape'){ state.editingId = null; render(); }
+      });
+    }
+  }
+
+  /* ---------- ações ---------- */
+  async function carregarBaseline(){
+    state.baseline = await apiList();
+  }
+
+  async function atualizarExibidas(){
+    var token = ++state.reqToken;
+    try{
+      var resultado = await buscarExibidas();
+      if(token !== state.reqToken) return; // resposta antiga, ignora
+      state.exibidas = resultado;
+      render();
+    } catch(e){
+      if(token !== state.reqToken) return;
+      showToast(e.message, true);
+    }
+  }
+
+  async function refresh(){
+    el.list.innerHTML = '<div class="loading">Carregando faixas...</div>';
+    try{
+      await carregarBaseline();
+      await atualizarExibidas();
+    } catch(e){
+      showToast(e.message, true);
+      el.list.innerHTML = '<div class="empty"><p>Não foi possível carregar as músicas.</p><p class="hint">'+escHtml(e.message)+'</p></div>';
+    }
+  }
+
+  async function handleAdd(){
+    el.formError.textContent = '';
+    var titulo = el.fTitulo.value.trim();
+    var ano = el.fAno.value.trim();
+    var genero = el.fGenero.value.trim();
+    var compositor = el.fCompositor.value.trim();
+    var artista = el.fArtista.value.trim();
+
+    if(!titulo || !artista){
+      el.formError.textContent = 'Título e artista são obrigatórios.';
+      return;
+    }
+
+    el.addBtn.disabled = true;
+    try{
+      await apiAdd({
+        titulo: titulo,
+        ano: ano ? Number(ano) : null,
+        genero: genero || null,
+        compositor: compositor || null,
+        artista: artista
+      });
+      el.fTitulo.value = ''; el.fAno.value = ''; el.fGenero.value = '';
+      el.fCompositor.value = ''; el.fArtista.value = '';
+      showToast('Música adicionada.');
+      await refresh();
+    } catch(e){
+      el.formError.textContent = e.message;
+    } finally {
+      el.addBtn.disabled = false;
+    }
+  }
+
+  async function handleSaveTitulo(id){
+    var input = document.getElementById('editInput');
+    var novoTitulo = input ? input.value.trim() : '';
+    if(!novoTitulo){ showToast('O título não pode ficar vazio.', true); return; }
+    try{
+      await apiEditarTitulo(id, novoTitulo);
+      state.editingId = null;
+      showToast('Título atualizado.');
+      await refresh();
+    } catch(e){
+      showToast(e.message, true);
+    }
+  }
+
+  async function handleDelete(id){
+    try{
+      await apiDelete(id);
+      showToast('Música apagada.');
+      await refresh();
+    } catch(e){
+      showToast(e.message, true);
+    }
+  }
+
+  /* ---------- eventos ---------- */
+  var buscaTimer = null;
+  el.addBtn.addEventListener('click', handleAdd);
+  el.fBusca.addEventListener('input', function(){
+    state.filtros.busca = el.fBusca.value;
+    clearTimeout(buscaTimer);
+    buscaTimer = setTimeout(atualizarExibidas, 350);
+  });
+  el.fFiltroGenero.addEventListener('change', function(){ state.filtros.genero = el.fFiltroGenero.value; atualizarExibidas(); });
+  el.fFiltroArtista.addEventListener('change', function(){ state.filtros.artista = el.fFiltroArtista.value; atualizarExibidas(); });
+  el.clearFilters.addEventListener('click', function(){
+    state.filtros = { busca:'', genero:'', artista:'' };
+    el.fBusca.value = ''; el.fFiltroGenero.value=''; el.fFiltroArtista.value='';
+    atualizarExibidas();
+  });
+
+  el.connectBtn.addEventListener('click', function(){
+    var url = el.apiBase.value.trim();
+    state.apiBase = url;
+    state.demoMode = false;
+    setStatus();
+    refresh();
+  });
+  el.demoBtn.addEventListener('click', function(){
+    state.demoMode = true;
+    setStatus();
+    refresh();
+  });
+
+  setStatus();
+  refresh();
+})();
+</script>
+</body>
+</html>
