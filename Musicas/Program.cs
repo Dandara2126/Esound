@@ -195,6 +195,77 @@ app.MapGet("/Musicas/artista/{artista}", (string artista) =>
     });
 });
 
+app.MapGet("/Musicas/compositor/{compositor}", (string compositor) =>
+{
+    MusicaModel[] musicasEncontradas = new MusicaModel[totalMusicas];
+    int totalEncontradas = 0;
+
+    for(int i =0; i < totalMusicas; i++)
+    {
+        if (musicas[i].Compositor.ToLower().Contains(compositor.ToLower()))
+        {
+            musicasEncontradas[totalEncontradas] = musicas[i];
+            totalEncontradas++;
+        }
+    }
+
+    if (totalEncontradas > 0)
+    {
+        MusicaModel[] resultado = new MusicaModel[totalEncontradas];
+
+        for (int i = 0; i < totalEncontradas; i++)
+        {
+            resultado[i] = musicasEncontradas[i];
+        }
+
+        return Results.Ok(new
+        {
+            compositor,
+            musicas = resultado
+        });
+    }
+
+    return Results.NotFound(new
+    {
+        message = "Nenhuma música desse compositor foi encontrada."
+    });
+});
+
+app.MapGet("/Musicas/ano/{ano}", (int ano) => {
+
+    MusicaModel[] musicasEncontradas = new MusicaModel[totalMusicas];
+    int totalEncontradas = 0;
+    
+    for (int i = 0; i < totalMusicas; i++)
+    {
+        if (musicas[i].Ano.ToString() == ano.ToString()) {
+            musicasEncontradas[totalEncontradas] = musicas[i];
+            totalEncontradas++;
+        }
+    }
+    
+    if (totalEncontradas > 0)
+    {
+        MusicaModel[] resultado = new MusicaModel[totalEncontradas];
+
+        for (int i = 0; i < totalEncontradas; i++)
+        {
+            resultado[i] = musicasEncontradas[i];
+        }
+
+        return Results.Ok(new
+        {
+            ano,
+            musicas = resultado
+        });
+    }
+    
+    return Results.NotFound(new
+    {
+        message = "Nenhuma música desse ano foi encontrada."
+    });
+});
+
 app.MapGet("/Musicas/genero/{genero}", (string genero) =>
 {
     MusicaModel[] musicasEncontradas = new MusicaModel[totalMusicas];
@@ -202,7 +273,7 @@ app.MapGet("/Musicas/genero/{genero}", (string genero) =>
 
     for (int i = 0; i < totalMusicas; i++)
     {
-        if (musicas[i].Genero.ToLower().Contains(genero.ToLower()))
+        if (musicas[i].Genero.ToLower() == genero.ToLower())
         {
             musicasEncontradas[totalEncontradas] = musicas[i];
             totalEncontradas++;

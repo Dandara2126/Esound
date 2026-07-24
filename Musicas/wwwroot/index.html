@@ -406,6 +406,14 @@
         <input type="text" id="fBusca" placeholder="Digite parte do título...">
       </div>
       <div>
+        <label for="fFiltroCompositor">Compositor</label>
+        <select id="fFiltroCompositor"><option value="">Todos</option></select>
+      </div>
+      <div>
+        <label for="fFiltroAno">Ano</label>
+        <select id="fFiltroAno"><option value="">Todos</option></select>
+      </div>
+      <div>
         <label for="fFiltroGenero">Gênero</label>
         <select id="fFiltroGenero"><option value="">Todos</option></select>
       </div>
@@ -435,7 +443,7 @@
     demoMode: false,
     baseline: [],
     exibidas: [],
-    filtros: { busca: '', genero: '', artista: '' },
+    filtros: { busca: '', genero: '', artista: '', compositor: '', ano: '' },
     editingId: null,
     reqToken: 0
   };
@@ -453,6 +461,8 @@
     addBtn: document.getElementById('addBtn'),
     formError: document.getElementById('formError'),
     fBusca: document.getElementById('fBusca'),
+    fFiltroCompositor: document.getElementById('fFiltroCompositor'),
+    fFiltroAno: document.getElementById('fFiltroAno'),
     fFiltroGenero: document.getElementById('fFiltroGenero'),
     fFiltroArtista: document.getElementById('fFiltroArtista'),
     clearFilters: document.getElementById('clearFilters'),
@@ -542,6 +552,20 @@
     var data = await res.json();
     return (data.musicas || []).filter(Boolean);
   }
+  async function apiPorCompositor(compositor){
+    var res = await fetch(musicasUrl() + '/compositor/' + encodeURIComponent(compositor));
+    if(res.status === 404) return [];
+    if(!res.ok) throw new Error(await parseErro(res));
+    var data = await res.json();
+    return (data.musicas || []).filter(Boolean);
+  }
+  async function apiPorAno(ano){
+    var res = await fetch(musicasUrl() + '/ano/' + encodeURIComponent(ano));
+    if(res.status === 404) return [];
+    if(!res.ok) throw new Error(await parseErro(res));
+    var data = await res.json();
+    return (data.musicas || []).filter(Boolean);
+  }
   async function apiAdd(musica){
     if(state.demoMode){
       var list = await demoLoad();
@@ -591,32 +615,37 @@
       if(busca && !(m.titulo || '').toLowerCase().includes(busca)) return false;
       if(state.filtros.genero && m.genero !== state.filtros.genero) return false;
       if(state.filtros.artista && m.artista !== state.filtros.artista) return false;
+      if(state.filtros.compositor && m.compositor !== state.filtros.compositor) return false;
+      if(state.filtros.ano && String(m.ano) !== String(state.filtros.ano)) return false;
       return true;
     });
   }
 
   async function buscarExibidas(){
-    var busca = state.filtros.busca.trim();
-    var genero = state.filtros.genero;
-    var artista = state.filtros.artista;
-
     if(state.demoMode){
       return aplicaFiltrosLocais(await demoLoad());
     }
 
-    var resultado;
-    if(busca){
-      resultado = await apiBusca(busca);
-      if(genero) resultado = resultado.filter(function(m){ return m.genero === genero; });
-      if(artista) resultado = resultado.filter(function(m){ return m.artista === artista; });
-    } else if(genero){
-      resultado = await apiPorGenero(genero);
-      if(artista) resultado = resultado.filter(function(m){ return m.artista === artista; });
-    } else if(artista){
-      resultado = await apiPorArtista(artista);
-    } else {
-      resultado = state.baseline;
-    }
+    var f = state.filtros;
+    var busca = f.busca.trim();
+    var compositor = f.compositor;
+    var ano = f.ano;
+    var genero = f.genero;
+    var artista = f.artista;
+
+    var resultado, chaveUsada;
+    if(busca){ resultado = await apiBusca(busca); chaveUsada = 'busca'; }
+    else if(compositor){ resultado = await apiPorCompositor(compositor); chaveUsada = 'compositor'; }
+    else if(ano){ resultado = await apiPorAno(ano); chaveUsada = 'ano'; }
+    else if(genero){ resultado = await apiPorGenero(genero); chaveUsada = 'genero'; }
+    else if(artista){ resultado = await apiPorArtista(artista); chaveUsada = 'artista'; }
+    else { resultado = state.baseline; chaveUsada = null; }
+
+    if(compositor) resultado = resultado.filter(function(m){ return m.compositor === compositor; });
+    if(ano) resultado = resultado.filter(function(m){ return String(m.ano) === String(ano); });
+    if(genero) resultado = resultado.filter(function(m){ return m.genero === genero; });
+    if(artista) resultado = resultado.filter(function(m){ return m.artista === artista; });
+
     return resultado;
   }
 
@@ -628,6 +657,8 @@
   function populateFilterOptions(){
     var generos = Array.from(new Set(state.baseline.map(function(m){ return m.genero; }).filter(Boolean))).sort();
     var artistas = Array.from(new Set(state.baseline.map(function(m){ return m.artista; }).filter(Boolean))).sort();
+    var compositores = Array.from(new Set(state.baseline.map(function(m){ return m.compositor; }).filter(Boolean))).sort();
+    var anos = Array.from(new Set(state.baseline.map(function(m){ return m.ano; }).filter(function(a){ return a !== null && a !== undefined && a !== ''; }))).sort(function(a,b){ return b - a; });
 
     var curG = el.fFiltroGenero.value;
     el.fFiltroGenero.innerHTML = '<option value="">Todos</option>' + generos.map(function(g){ return '<option value="'+escAttr(g)+'">'+escHtml(g)+'</option>'; }).join('');
@@ -636,6 +667,14 @@
     var curA = el.fFiltroArtista.value;
     el.fFiltroArtista.innerHTML = '<option value="">Todos</option>' + artistas.map(function(a){ return '<option value="'+escAttr(a)+'">'+escHtml(a)+'</option>'; }).join('');
     el.fFiltroArtista.value = artistas.indexOf(curA) >= 0 ? curA : '';
+
+    var curC = el.fFiltroCompositor.value;
+    el.fFiltroCompositor.innerHTML = '<option value="">Todos</option>' + compositores.map(function(c){ return '<option value="'+escAttr(c)+'">'+escHtml(c)+'</option>'; }).join('');
+    el.fFiltroCompositor.value = compositores.indexOf(curC) >= 0 ? curC : '';
+
+    var curAno = el.fFiltroAno.value;
+    el.fFiltroAno.innerHTML = '<option value="">Todos</option>' + anos.map(function(a){ return '<option value="'+escAttr(a)+'">'+escHtml(a)+'</option>'; }).join('');
+    el.fFiltroAno.value = anos.map(String).indexOf(curAno) >= 0 ? curAno : '';
   }
 
   function escHtml(s){
@@ -803,11 +842,14 @@
     clearTimeout(buscaTimer);
     buscaTimer = setTimeout(atualizarExibidas, 350);
   });
+  el.fFiltroCompositor.addEventListener('change', function(){ state.filtros.compositor = el.fFiltroCompositor.value; atualizarExibidas(); });
+  el.fFiltroAno.addEventListener('change', function(){ state.filtros.ano = el.fFiltroAno.value; atualizarExibidas(); });
   el.fFiltroGenero.addEventListener('change', function(){ state.filtros.genero = el.fFiltroGenero.value; atualizarExibidas(); });
   el.fFiltroArtista.addEventListener('change', function(){ state.filtros.artista = el.fFiltroArtista.value; atualizarExibidas(); });
   el.clearFilters.addEventListener('click', function(){
-    state.filtros = { busca:'', genero:'', artista:'' };
+    state.filtros = { busca:'', genero:'', artista:'', compositor:'', ano:'' };
     el.fBusca.value = ''; el.fFiltroGenero.value=''; el.fFiltroArtista.value='';
+    el.fFiltroCompositor.value=''; el.fFiltroAno.value='';
     atualizarExibidas();
   });
 

@@ -33,4 +33,4 @@
 /workspaces/Esound/Musicas/obj/Debug/net10.0/Musicas.genruntimeconfig.cache
 /workspaces/Esound/Musicas/obj/Debug/net10.0/ref/Musicas.dll
 /workspaces/Esound/Musicas/bin/Debug/net10.0/Musicas.staticwebassets.runtime.json
-/workspaces/Esound/Musicas/obj/Debug/net10.0/compressed/6uvgniawd3-{0}-9w3xy55eao-9w3xy55eao.gz
+/workspaces/Esound/Musicas/obj/Debug/net10.0/compressed/6uvgniawd3-{0}-1oz5irbv35-1oz5irbv35.gz
